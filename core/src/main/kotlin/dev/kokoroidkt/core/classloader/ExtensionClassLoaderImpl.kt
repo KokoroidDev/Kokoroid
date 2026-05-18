@@ -28,7 +28,9 @@ open class ExtensionClassLoaderImpl(
 
     internal fun isExtensionCorrect(): Boolean = true
 
+
     override fun findClass(className: String): Class<*> {
+
         try {
             val entryName = className.replace('.', '/') + ".class"
             val entry =

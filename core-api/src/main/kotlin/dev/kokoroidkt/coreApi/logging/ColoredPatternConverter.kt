@@ -13,7 +13,7 @@ import java.text.SimpleDateFormat
 import java.util.*
 
 class ColoredPatternConverter : CompositeConverter<ILoggingEvent>() {
-    private val timeFormat = SimpleDateFormat("YYYY-mm-dd HH:mm:ss")
+    private val timeFormat = SimpleDateFormat("YYYY-MM-dd HH:mm:ss")
 
     override fun transform(
         event: ILoggingEvent,

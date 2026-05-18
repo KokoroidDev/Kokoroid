@@ -227,7 +227,9 @@ class KokoroidLauncher(
         } catch (e: CriticalException) {
             logger.error(e) { "CRITICAL Error occurred" }
             crashRegistry.recordAndRequestStop(e, null)
+            shutdown()
         } catch (e: CancellationException) {
+            logger.debug { "A CancellationException occurred: $e" }
             throw e
         } catch (e: Exception) {
             // 漏网异常视为框架不可恢复错误，按 Critical 上报并停机
@@ -236,18 +238,21 @@ class KokoroidLauncher(
                 CriticalException(cause = e),
                 event = null,
             )
-        } finally {
-            shutdownThread.start()
-            shutdownThread.join()
-            val exitCode =
-                if (runtimeState.state is InternalState.Stopped) {
-                    (runtimeState.state as InternalState.Stopped).statusCode
-                } else {
-                    logger.error { "Wrong exiting runtimeStatus.status: ${runtimeState.state::class.qualifiedName}" }
-                    ExitStatus.WRONG_EXIT_STATE
-                }
-            crashRegistry.stopNow(exitCode = exitCode)
+            shutdown()
         }
+    }
+
+    internal fun shutdown() {
+        shutdownThread.start()
+        shutdownThread.join()
+        val exitCode =
+            if (runtimeState.state is InternalState.Stopped) {
+                (runtimeState.state as InternalState.Stopped).statusCode
+            } else {
+                logger.error { "Wrong exiting runtimeStatus.status: ${runtimeState.state::class.qualifiedName}" }
+                ExitStatus.WRONG_EXIT_STATE
+            }
+        crashRegistry.stopNow(exitCode = exitCode)
     }
 
     fun stopAllExtensions() {

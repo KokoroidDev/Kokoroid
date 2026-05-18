@@ -50,7 +50,6 @@ buildscript {
 }
 
 dependencies {
-    dokkaHtmlPlugin("org.jetbrains.dokka:versioning-plugin:2.2.0")
     dokka(project(":core"))
     dokka(project(":core-api"))
     dokka(project(":adapter-api"))
