@@ -240,19 +240,21 @@ class DependencyExtensionIntegrationTest {
         @JvmStatic
         @BeforeAll
         fun buildTestJars() {
-            // Determine the correct Gradle wrapper for the platform.
-            // The test runs with working directory = <project>/core/,
-            // so we reference gradlew.bat or gradlew from the project root.
+            // Find the project root directory by searching for gradlew.bat/gradlew
             val isWindows = System.getProperty("os.name").startsWith("Windows", ignoreCase = true)
-            val gradlew = if (isWindows) {
-                File("../gradlew.bat").absolutePath
-            } else {
-                File("../gradlew").absolutePath
-            }
+            val gradlewName = if (isWindows) "gradlew.bat" else "gradlew"
+
+            val userDir = File(System.getProperty("user.dir"))
+            val projectRoot = generateSequence(userDir) { it.parentFile }
+                .firstOrNull { File(it, gradlewName).exists() }
+                ?: error("Cannot find project root (no $gradlewName found from ${userDir.absolutePath})")
+
+            val gradlew = File(projectRoot, gradlewName).absolutePath
 
             val process = ProcessBuilder(
                 gradlew, ":test-extension-with-deps:jar", "-q",
             )
+                .directory(projectRoot)
                 .inheritIO()
                 .start()
 
@@ -261,9 +263,8 @@ class DependencyExtensionIntegrationTest {
                 "test-extension-with-deps JAR build failed (exit code $exitCode)"
             }
 
-            val jarPath = Paths.get("../test-extension-with-deps/build/libs/test-extension-with-deps.jar")
-                .normalize()
-            builtJarFile = jarPath.toFile()
+            val jarPath = File(projectRoot, "test-extension-with-deps/build/libs/test-extension-with-deps.jar")
+            builtJarFile = jarPath
 
             require(builtJarFile.exists()) {
                 "Test JAR not found at expected path: ${builtJarFile.absolutePath}"
