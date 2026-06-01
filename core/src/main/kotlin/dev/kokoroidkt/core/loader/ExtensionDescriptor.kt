@@ -44,7 +44,7 @@ data class ExtensionDescriptor(
                 mainClass = meta.mainClass,
                 type = ExtensionType.DRIVER,
                 jarFile = jarFile,
-                dependencyIdentifiers = emptyList(),
+                dependencyIdentifiers = meta.dependencies,
             )
 
         /**
@@ -57,7 +57,7 @@ data class ExtensionDescriptor(
                 mainClass = meta.mainClass,
                 type = ExtensionType.ADAPTER,
                 jarFile = jarFile,
-                dependencyIdentifiers = emptyList(),
+                dependencyIdentifiers = meta.driverDependencies + meta.adapterDependencies,
             )
 
         /**
@@ -70,7 +70,8 @@ data class ExtensionDescriptor(
                 mainClass = meta.mainClass,
                 type = ExtensionType.PLUGIN,
                 jarFile = jarFile,
-                dependencyIdentifiers = meta.dependedPlugins?.toList() ?: emptyList(),
+                dependencyIdentifiers = (meta.dependedPlugins?.toList() ?: emptyList()) +
+                    meta.adapterDependencies + meta.driverDependencies,
             )
     }
 }

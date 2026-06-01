@@ -69,11 +69,7 @@ class TestExtensionLoader {
 
     @Test
     fun `test extension loader`() {
-        kokoroidLauncher.loadDrivers()
-        kokoroidLauncher.loadAdapters()
-        kokoroidLauncher.initPlugins()
-        kokoroidLauncher.startAdapters()
-        kokoroidLauncher.startDrivers()
+        kokoroidLauncher.initAllExtensions()
     }
 
     companion object {

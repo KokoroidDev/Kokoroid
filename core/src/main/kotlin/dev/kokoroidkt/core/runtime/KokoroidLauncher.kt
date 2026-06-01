@@ -22,7 +22,9 @@ import dev.kokoroidkt.core.di.allModules
 import dev.kokoroidkt.core.driver.DriverLoader
 import dev.kokoroidkt.core.driver.DriverManager
 import dev.kokoroidkt.core.logger.getLogger
+import dev.kokoroidkt.core.extension.ExtensionType
 import dev.kokoroidkt.core.loader.DependencyAwareClassLoader
+import dev.kokoroidkt.core.loader.ExtensionPreloader
 import dev.kokoroidkt.core.plugin.PluginLoader
 import dev.kokoroidkt.core.plugin.PluginManager
 import dev.kokoroidkt.core.runtime.crash.CrashRegistry
@@ -346,12 +348,24 @@ class KokoroidLauncher(
      * 5. 按照优先级顺序加载每个Plugin，Plugin启动成功后会立刻调用他的[Plugin.onEnable]方法
      */
     fun initAllExtensions() {
+        // Phase 1: Scan directories, collect JAR paths into preloaders
+        installDrivers()
+        installAdapters()
+        installPlugins()
+
+        // Phase 2: Preload — read metadata, build dependency graph, create classloader chain
+        val preloadResult = ExtensionPreloader(
+            driverPreloader, adapterPreloader, pluginPreloader,
+        ).preload()
+
+        // Phase 3: Load extensions using dependency-aware classloaders
         runtimeState.state = InternalState.Starting(InternalState.Starting.StartingStep.LoadingDrivers())
-        loadDrivers()
+        loadDrivers(preloadResult)
         runtimeState.state = InternalState.Starting(InternalState.Starting.StartingStep.LoadingAdapters())
-        loadAdapters()
+        loadAdapters(preloadResult)
         runtimeState.state = InternalState.Starting(InternalState.Starting.StartingStep.LoadingPlugins())
-        initPlugins()
+        loadPlugins(preloadResult)
+
         runtimeState.state = InternalState.Starting(InternalState.Starting.StartingStep.StartingAdapters())
         startAdapters()
         runtimeState.state = InternalState.Starting(InternalState.Starting.StartingStep.StartingDrivers())
@@ -387,100 +401,74 @@ class KokoroidLauncher(
         }
     }
 
-    fun loadDrivers() {
+    // ─────────────────────────────────────────────────────────────────────────
+    // Install phase — scan directories, collect JAR paths
+    // ─────────────────────────────────────────────────────────────────────────
+
+    private fun installDrivers() {
+        driverPreloader.jarPaths.addAll(jarPathsFrom(config.basic.driverDirectory))
+    }
+
+    private fun installAdapters() {
+        adapterPreloader.jarPaths.addAll(jarPathsFrom(config.basic.adapterDirectory))
+    }
+
+    private fun installPlugins() {
+        pluginPreloader.jarPaths.addAll(jarPathsFrom(config.basic.pluginDirectory))
+    }
+
+    private fun jarPathsFrom(dir: Path): List<Path> =
+        dir.walk().filter { it.isRegularFile() && it.extension == "jar" }.toList()
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Load phase — use dependency-aware classloaders from preload result
+    // ─────────────────────────────────────────────────────────────────────────
+
+    private fun loadDrivers(preloadResult: ExtensionPreloader.PreloadResult) {
         val logger = getLogger("DriverLoader")
         logger.info { "loading drivers..." }
-        val driverDirectory = config.basic.driverDirectory
-        logger.info {
-            val count =
-                driverDirectory.walk().count { it.extension == "jar" && it.isRegularFile() }
-            "find $count drivers"
-        }
-        driverDirectory
-            .walk()
-            .filter { it.isRegularFile() && it.extension == "jar" }
-            .mapNotNull {
-                loadDriverJar(logger, it)
-            }.forEach {
-                driverPreloader.install(it)
-            }
+        logger.info { "find ${preloadResult.allDescriptors.count { it.type == ExtensionType.DRIVER }} drivers" }
 
-        driverPreloader.jarPaths
-            .filter {
-                it.extension == "jar" && it.isRegularFile()
-            }.mapNotNull {
-                loadDriverJar(logger, it)
-            }.forEach {
-                driverPreloader.install(it)
+        preloadResult.allDescriptors
+            .filter { it.type == ExtensionType.DRIVER }
+            .sortedBy { it.name }
+            .forEach { desc ->
+                val cl = preloadResult.classLoaderMap[desc.identifier] ?: return@forEach
+                try {
+                    logger.debug { "try to load ${desc.jarFile.absolutePath}" }
+                    val (driver, metadata, _) = DriverLoader(desc.jarFile, cl as DependencyAwareClassLoader).loadDriver()
+                    val container = driverManager.create(driver, metadata)
+                    driverManager.register(container)
+                    logger.debug { "${container.driverId} metadata: ${Json.encodeToString(metadata)}" }
+                    logger.info { "Loading ${container.driverId}" }
+                    driverManager.loadDriver(container)
+                    logger.info { "Loaded ${container.driverId} successfully" }
+                } catch (e: Exception) {
+                    logger.error(e) { "Failed to load driver: ${e.message}" }
+                }
             }
-
-        driverPreloader.instants.sortedBy { it.metadata.priority }.forEach {
-            driverManager.register(it)
-            try {
-                logger.debug { "${it.driverId} metadata: ${Json.encodeToString(it.metadata)}" }
-                logger.info { "Loading ${it.driverId}" }
-                driverManager.loadDriver(it)
-                logger.info { "Loaded ${it.driverId} successfully" }
-            } catch (e: Exception) {
-                logger.error(e) { "Failed to load driver: ${e.message}" }
-            }
-        }
         logger.info { "successfully loaded ${driverManager.length} drivers" }
     }
 
-    private fun loadDriverJar(
-        logger: KokoroidLogger,
-        paths: Path,
-    ): DriverContainer? =
-        try {
-            logger.debug { "try to load ${paths.toFile().absolutePath}" }
-            val jarFile = paths.toFile()
-            val classLoader = DependencyAwareClassLoader(jarFile, emptyList())
-            val (driver, metadata, _) = DriverLoader(jarFile, classLoader).loadDriver()
-            driverManager.create(driver, metadata)
-        } catch (e: Exception) {
-            logger.error(e) {
-                "Failed to load driver: ${e.message}"
-            }
-            null
-        }
-
-    fun loadAdapters() {
+    private fun loadAdapters(preloadResult: ExtensionPreloader.PreloadResult) {
         val logger = getLogger("AdapterLoader")
         logger.info { "loading adapters..." }
-        val adapterDictionary = config.basic.adapterDirectory
-        logger.info {
-            val count =
-                adapterDictionary.walk().count { it.extension == "jar" && it.isRegularFile() }
-            "find $count adapters"
-        }
-        adapterDictionary
-            .walk()
-            .filter { it.isRegularFile() && it.extension == "jar" }
-            .mapNotNull {
-                loadAdapterJar(logger, it)
-            }.forEach {
-                adapterPreloader.install(it)
-            }
+        logger.info { "find ${preloadResult.allDescriptors.count { it.type == ExtensionType.ADAPTER }} adapters" }
 
-        adapterPreloader.jarPaths
-            .filter {
-                it.extension == "jar" && it.isRegularFile()
-            }.mapNotNull {
-                loadAdapterJar(logger, it)
-            }.forEach {
-                adapterPreloader.install(it)
-            }
-
-        adapterPreloader.instants
-            .sortedBy { it.metadata.priority }
-            .forEach {
-                adapterManager.register(it)
+        preloadResult.allDescriptors
+            .filter { it.type == ExtensionType.ADAPTER }
+            .sortedBy { it.name }
+            .forEach { desc ->
+                val cl = preloadResult.classLoaderMap[desc.identifier] ?: return@forEach
                 try {
-                    logger.debug { "${it.adapterId} metadata: ${Json.encodeToString(it.metadata)}" }
-                    logger.info { "Loading ${it.adapterId}" }
-                    adapterManager.loadAdapter(it)
-                    logger.info { "Loaded ${it.adapterId} successfully" }
+                    logger.debug { "try to load ${desc.jarFile.absolutePath}" }
+                    val (adapter, meta, _) = AdapterLoader(desc.jarFile, cl as DependencyAwareClassLoader).loadAdapter()
+                    val container = adapterManager.create(adapter, meta)
+                    adapterManager.register(container)
+                    logger.debug { "${container.adapterId} metadata: ${Json.encodeToString(meta)}" }
+                    logger.info { "Loading ${container.adapterId}" }
+                    adapterManager.loadAdapter(container)
+                    logger.info { "Loaded ${container.adapterId} successfully" }
                 } catch (e: Exception) {
                     logger.error(e) { "Failed to load adapter: ${e.message}" }
                 }
@@ -488,82 +476,31 @@ class KokoroidLauncher(
         logger.info { "successfully loaded ${adapterManager.length} adapters" }
     }
 
-    private fun loadAdapterJar(
-        logger: KokoroidLogger,
-        paths: Path,
-    ): AdapterContainer? =
-        try {
-            logger.debug { "try to load ${paths.toFile().absolutePath}" }
-            val jarFile = paths.toFile()
-            val classLoader = DependencyAwareClassLoader(jarFile, emptyList())
-            val (adapter, metadata, _) = AdapterLoader(jarFile, classLoader).loadAdapter()
-            adapterManager.create(adapter, metadata)
-        } catch (e: Exception) {
-            logger.error(e) {
-                "Failed to load adapter: ${e.message}"
-            }
-            null
-        }
-
-    fun initPlugins() {
+    private fun loadPlugins(preloadResult: ExtensionPreloader.PreloadResult) {
         val logger = getLogger("PluginLoader")
         logger.info { "loading plugins..." }
-        val pluginDirectory = config.basic.pluginDirectory
-        logger.info {
-            val count =
-                pluginDirectory
-                    .walk()
-                    .count { it.isRegularFile() && it.extension == "jar" }
-            "find $count plugins."
-        }
-        pluginDirectory
-            .walk()
-            .filter { it.isRegularFile() && it.extension == "jar" }
-            .mapNotNull {
-                loadPluginJar(logger, it)
-            }.forEach {
-                pluginPreloader.install(it)
-            }
+        logger.info { "find ${preloadResult.allDescriptors.count { it.type == ExtensionType.PLUGIN }} plugins." }
 
-        pluginPreloader.jarPaths
-            .filter {
-                it.extension == "jar" && it.isRegularFile()
-            }.mapNotNull {
-                loadPluginJar(logger, it)
-            }.forEach {
-                pluginPreloader.install(it)
-            }
-
-        pluginPreloader.instants
-            .sortedBy { it.metadata.priority }
-            .forEach {
-                pluginManager.register(it)
+        preloadResult.allDescriptors
+            .filter { it.type == ExtensionType.PLUGIN }
+            .sortedBy { it.name }
+            .forEach { desc ->
+                val cl = preloadResult.classLoaderMap[desc.identifier] ?: return@forEach
                 try {
-                    logger.debug { "${it.pluginId} metadata: ${Json.encodeToString(it.metadata)}" }
-                    logger.info { "loading ${it.pluginId}" }
-                    pluginManager.loadPlugin(it)
-                    logger.debug { "enable ${it.pluginId} plugin" }
-                    pluginManager.enablePlugin(it)
-                    logger.info { "enable ${it.pluginId} plugin successfully" }
+                    logger.debug { "Try to loading: ${desc.jarFile.absolutePath}" }
+                    val (plugin, meta, _) = PluginLoader(desc.jarFile, cl as DependencyAwareClassLoader).loadPlugin()
+                    val container = pluginManager.create(plugin, meta)
+                    pluginManager.register(container)
+                    logger.debug { "${container.pluginId} metadata: ${Json.encodeToString(meta)}" }
+                    logger.info { "loading ${container.pluginId}" }
+                    pluginManager.loadPlugin(container)
+                    logger.debug { "enable ${container.pluginId} plugin" }
+                    pluginManager.enablePlugin(container)
+                    logger.info { "enable ${container.pluginId} plugin successfully" }
                 } catch (e: Exception) {
                     logger.error(e) { "Failed to load plugin: ${e.message}" }
                 }
             }
         logger.info { "successfully loaded ${pluginManager.length} plugins" }
     }
-
-    private fun loadPluginJar(
-        logger: KokoroidLogger,
-        paths: Path,
-    ): PluginContainer? =
-        try {
-            logger.debug { "Try to loading: ${paths.toFile().absolutePath}" }
-            val jarFile = paths.toFile()
-            val classLoader = DependencyAwareClassLoader(jarFile, emptyList())
-            val (plugin, metadata, _) = PluginLoader(jarFile, classLoader).loadPlugin()
-            pluginManager.create(plugin, metadata)
-        } catch (e: Exception) {
-            logger.error(e) { "Failed to load plugin: ${e.message}" }
-            null
-        }
 }

@@ -45,4 +45,9 @@ data class DriverMeta(
      * The priority of this driver.
      */
     val priority: Int = 1000,
+    /**
+     * 该驱动依赖的驱动列表，格式为 "name@mainClass"
+     * The list of drivers that this driver depends on, formatted as "name@mainClass".
+     */
+    val dependencies: List<String> = emptyList(),
 )

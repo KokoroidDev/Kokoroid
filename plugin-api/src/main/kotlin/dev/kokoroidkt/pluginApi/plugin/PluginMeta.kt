@@ -65,4 +65,14 @@ class PluginMeta(
      * The priority of this plugin.
      */
     val priority: Int = 1000,
+    /**
+     * 该插件依赖的适配器列表，格式为 "name@mainClass"
+     * The list of adapters that this plugin depends on, formatted as "name@mainClass".
+     */
+    val adapterDependencies: List<String> = emptyList(),
+    /**
+     * 该插件依赖的驱动列表，格式为 "name@mainClass"
+     * The list of drivers that this plugin depends on, formatted as "name@mainClass".
+     */
+    val driverDependencies: List<String> = emptyList(),
 )
