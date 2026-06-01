@@ -104,6 +104,7 @@ class ExtensionPreloader(
             classLoaderMap[descriptor.identifier] = DependencyAwareClassLoader(
                 jarFile = descriptor.jarFile,
                 dependencyClassLoaders = depClassLoaders,
+                extensionName = descriptor.name,
             )
         }
         return classLoaderMap

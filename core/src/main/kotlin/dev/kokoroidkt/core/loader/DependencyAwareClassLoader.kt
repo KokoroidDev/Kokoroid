@@ -25,13 +25,16 @@ import java.util.jar.JarFile
  *
  * @param jarFile the extension JAR file to load classes from
  * @param dependencyClassLoaders ordered list of dependency ClassLoaders
+ * @param extensionName human-readable extension name used as logger prefix
  */
 open class DependencyAwareClassLoader(
     private val jarFile: File,
     private val dependencyClassLoaders: List<ClassLoader>,
+    private val extensionName: String? = null,
 ) : ExtensionClassloader(parent = null) {
 
-    override var logger: KokoroidLogger = getLogger("ExtensionClassLoader-${jarFile.name}")
+    override var logger: KokoroidLogger =
+        getLogger(extensionName ?: "ExtensionClassLoader-${jarFile.name}")
         internal set
 
     private val jar by lazy { JarFile(jarFile) }
