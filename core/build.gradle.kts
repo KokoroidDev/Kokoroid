@@ -58,6 +58,7 @@ tasks.register<Delete>("deleteTestConfigFolder") {
 
 tasks.test {
     dependsOn(":test-extension:jar")
+    dependsOn(":test-extension-with-deps:jar")
     dependsOn(":core:deleteTestConfigFolder")
     useJUnitPlatform()
     jvmArgs("--enable-native-access=ALL-UNNAMED")

@@ -16,7 +16,6 @@ import dev.kokoroidkt.core.loader.preloader.PluginPreloader
 import dev.kokoroidkt.core.plugin.PluginLoader
 import dev.kokoroidkt.driverApi.driver.Driver
 import dev.kokoroidkt.pluginApi.plugin.Plugin
-import org.junit.jupiter.api.BeforeAll
 import java.io.File
 import java.nio.file.Paths
 import kotlin.test.Test
@@ -231,46 +230,18 @@ class DependencyExtensionIntegrationTest {
     ): ExtensionDescriptor? = result.allDescriptors.find { it.identifier == identifier }
 
     // -----------------------------------------------------------------------
-    // Companion — one-time JAR build
+    // JAR path — built by Gradle task dependency :test-extension-with-deps:jar
     // -----------------------------------------------------------------------
 
-    companion object {
-        private lateinit var builtJarFile: File
-
-        @JvmStatic
-        @BeforeAll
-        fun buildTestJars() {
-            // Find the project root directory by searching for gradlew.bat/gradlew
-            val isWindows = System.getProperty("os.name").startsWith("Windows", ignoreCase = true)
-            val gradlewName = if (isWindows) "gradlew.bat" else "gradlew"
-
-            val userDir = File(System.getProperty("user.dir"))
-            val projectRoot = generateSequence(userDir) { it.parentFile }
-                .firstOrNull { File(it, gradlewName).exists() }
-                ?: error("Cannot find project root (no $gradlewName found from ${userDir.absolutePath})")
-
-            val gradlew = File(projectRoot, gradlewName).absolutePath
-
-            val process = ProcessBuilder(
-                gradlew, ":test-extension-with-deps:jar", "-q",
-            )
-                .directory(projectRoot)
-                .inheritIO()
-                .start()
-
-            val exitCode = process.waitFor()
-            require(exitCode == 0) {
-                "test-extension-with-deps JAR build failed (exit code $exitCode)"
-            }
-
-            val jarPath = File(projectRoot, "test-extension-with-deps/build/libs/test-extension-with-deps.jar")
-            builtJarFile = jarPath
-
-            require(builtJarFile.exists()) {
-                "Test JAR not found at expected path: ${builtJarFile.absolutePath}"
-            }
+    private fun jarFile(): File {
+        // Search from user.dir upward for the pre-built test JAR
+        val jarRelativePath = "test-extension-with-deps/build/libs/test-extension-with-deps.jar"
+        var dir = File(System.getProperty("user.dir"))
+        while (dir != null) {
+            val jar = File(dir, jarRelativePath)
+            if (jar.exists()) return jar
+            dir = dir.parentFile
         }
-
-        private fun jarFile(): File = builtJarFile
+        error("Pre-built test-extension-with-deps JAR not found. Run './gradlew :test-extension-with-deps:jar' first.")
     }
 }
