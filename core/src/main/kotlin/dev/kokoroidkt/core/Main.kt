@@ -12,9 +12,9 @@ import com.github.ajalt.clikt.parameters.options.flag
 import com.github.ajalt.clikt.parameters.options.multiple
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.types.path
-import dev.kokoroidkt.core.boot.AdapterPreloader
-import dev.kokoroidkt.core.boot.DriverPreloader
-import dev.kokoroidkt.core.boot.PluginPreloader
+import dev.kokoroidkt.core.loader.preloader.AdapterPreloader
+import dev.kokoroidkt.core.loader.preloader.DriverPreloader
+import dev.kokoroidkt.core.loader.preloader.PluginPreloader
 import dev.kokoroidkt.core.logger.getLogger
 import dev.kokoroidkt.core.runtime.KokoroidLauncher
 import dev.kokoroidkt.core.utils.KokoroidVersion

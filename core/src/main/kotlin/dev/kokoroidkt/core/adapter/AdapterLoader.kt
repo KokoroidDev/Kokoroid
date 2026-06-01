@@ -8,9 +8,8 @@ package dev.kokoroidkt.core.adapter
 
 import dev.kokoroidkt.adapterApi.adapter.Adapter
 import dev.kokoroidkt.adapterApi.adapter.AdapterMeta
-import dev.kokoroidkt.core.classloader.ExtensionClassLoaderImpl
 import dev.kokoroidkt.core.exceptions.LoadAdapterFailedException
-import dev.kokoroidkt.core.logger.getLogger
+import dev.kokoroidkt.core.loader.DependencyAwareClassLoader
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromStream
@@ -19,6 +18,7 @@ import java.util.jar.JarFile
 
 class AdapterLoader(
     private val jarFile: File,
+    private val classLoader: DependencyAwareClassLoader,
 ) {
     private val jar = JarFile(jarFile)
     private val json =
@@ -29,18 +29,16 @@ class AdapterLoader(
         }
 
     @OptIn(ExperimentalSerializationApi::class)
-    fun loadAdapter(): Pair<Adapter, AdapterMeta> {
+    fun loadAdapter(): Triple<Adapter, AdapterMeta, DependencyAwareClassLoader> {
         val metadataEntry = jar.getEntry("adapter-meta.json")
         try {
             val metadata: AdapterMeta =
                 jar.getInputStream(metadataEntry).use {
                     json.decodeFromStream<AdapterMeta>(it)
                 }
-            val classLoader = ExtensionClassLoaderImpl(jarFile)
             val clazz = classLoader.loadClass(metadata.mainClass)
             val adapter = clazz.getConstructor().newInstance() as Adapter
-            classLoader.logger = getLogger(metadata.name)
-            return adapter to metadata
+            return Triple(adapter, metadata, classLoader)
         } catch (e: Exception) {
             throw LoadAdapterFailedException(
                 msg = "Error while loading driver: ${e.message}",

@@ -1,4 +1,10 @@
-package dev.kokoroidkt.core.boot
+// SPDX-FileCopyrightText: 2026 Kokoroid Contributors
+//
+// SPDX-Contributor: moran0710
+//
+// SPDX-License-Identifier: LGPL-2.1-or-later
+
+package dev.kokoroidkt.core.loader.preloader
 
 import dev.kokoroidkt.driverApi.driver.Driver
 import dev.kokoroidkt.driverApi.driver.DriverContainer

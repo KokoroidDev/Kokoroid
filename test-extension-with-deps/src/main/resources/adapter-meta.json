@@ -1,0 +1,15 @@
+{
+  "name": "AdapterB",
+  "mainClass": "dev.kokoroidkt.testdeps.adapter.AdapterB",
+  "version": "1.0",
+  "authors": [
+    "test"
+  ],
+  "description": null,
+  "website": null,
+  "priority": 0,
+  "driverDependencies": [
+    "DriverA@dev.kokoroidkt.testdeps.driver.DriverA"
+  ],
+  "adapterDependencies": []
+}

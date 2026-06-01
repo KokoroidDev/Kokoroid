@@ -1,0 +1,11 @@
+{
+  "name": "DriverA",
+  "mainClass": "dev.kokoroidkt.testdeps.driver.DriverA",
+  "version": "1.0",
+  "authors": [
+    "test"
+  ],
+  "description": null,
+  "website": null,
+  "priority": 0
+}

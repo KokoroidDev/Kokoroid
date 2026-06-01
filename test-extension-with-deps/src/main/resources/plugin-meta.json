@@ -1,0 +1,20 @@
+{
+  "name": "PluginC",
+  "author": [
+    "test"
+  ],
+  "description": null,
+  "mainClass": "dev.kokoroidkt.testdeps.plugin.PluginC",
+  "version": "1.0",
+  "website": null,
+  "adapterDependencies": [
+    "AdapterB@dev.kokoroidkt.testdeps.adapter.AdapterB"
+  ],
+  "driverDependencies": [
+    "DriverA@dev.kokoroidkt.testdeps.driver.DriverA"
+  ],
+  "dependedPlugins": [],
+  "loadBefore": null,
+  "loadAfter": null,
+  "priority": 0
+}

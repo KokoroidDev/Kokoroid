@@ -6,9 +6,8 @@
 
 package dev.kokoroidkt.core.driver
 
-import dev.kokoroidkt.core.classloader.ExtensionClassLoaderImpl
 import dev.kokoroidkt.core.exceptions.LoadDriverFailedException
-import dev.kokoroidkt.core.logger.getLogger
+import dev.kokoroidkt.core.loader.DependencyAwareClassLoader
 import dev.kokoroidkt.driverApi.driver.Driver
 import dev.kokoroidkt.driverApi.driver.DriverMeta
 import kotlinx.serialization.ExperimentalSerializationApi
@@ -19,6 +18,7 @@ import java.util.jar.JarFile
 
 class DriverLoader(
     private val jarFile: File,
+    private val classLoader: DependencyAwareClassLoader,
 ) {
     private val jar = JarFile(jarFile)
     private val json =
@@ -29,18 +29,16 @@ class DriverLoader(
         }
 
     @OptIn(ExperimentalSerializationApi::class)
-    fun loadDriver(): Pair<Driver, DriverMeta> {
+    fun loadDriver(): Triple<Driver, DriverMeta, DependencyAwareClassLoader> {
         val metadataEntry = jar.getEntry("driver-meta.json")
         try {
             val metadata: DriverMeta =
                 jar.getInputStream(metadataEntry).use {
                     json.decodeFromStream<DriverMeta>(it)
                 }
-            val classLoader = ExtensionClassLoaderImpl(jarFile)
             val clazz = classLoader.loadClass(metadata.mainClass)
-            classLoader.logger = getLogger(metadata.name)
             val driver = clazz.getConstructor().newInstance() as Driver
-            return driver to metadata
+            return Triple(driver, metadata, classLoader)
         } catch (e: Exception) {
             throw LoadDriverFailedException(
                 msg = "Error while loading driver: ${e.message}",

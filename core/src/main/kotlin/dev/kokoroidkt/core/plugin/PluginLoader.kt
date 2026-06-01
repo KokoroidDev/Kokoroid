@@ -6,9 +6,8 @@
 
 package dev.kokoroidkt.core.plugin
 
-import dev.kokoroidkt.core.classloader.ExtensionClassLoaderImpl
 import dev.kokoroidkt.core.exceptions.LoadPluginFailedException
-import dev.kokoroidkt.core.logger.getLogger
+import dev.kokoroidkt.core.loader.DependencyAwareClassLoader
 import dev.kokoroidkt.pluginApi.plugin.Plugin
 import dev.kokoroidkt.pluginApi.plugin.PluginMeta
 import kotlinx.serialization.ExperimentalSerializationApi
@@ -19,6 +18,7 @@ import java.util.jar.JarFile
 
 class PluginLoader(
     val jarFile: File,
+    private val classLoader: DependencyAwareClassLoader,
 ) {
     private val jar = JarFile(jarFile)
     private val json =
@@ -28,13 +28,11 @@ class PluginLoader(
             coerceInputValues = true
         }
 
-    internal fun loadPlugin(): Pair<Plugin, PluginMeta> {
-        val metadata = getMetadata()
-        var plugin: Plugin
+    fun loadPlugin(): Triple<Plugin, PluginMeta, DependencyAwareClassLoader> {
+        val meta = loadMeta()
+        val plugin: Plugin
         try {
-            val classLoader = ExtensionClassLoaderImpl(jarFile)
-            classLoader.logger = getLogger(metadata.name)
-            val clazz = classLoader.loadClass(metadata.mainClass)
+            val clazz = classLoader.loadClass(meta.mainClass)
             plugin = clazz.getConstructor().newInstance() as Plugin
         } catch (e: Exception) {
             throw LoadPluginFailedException(
@@ -43,11 +41,11 @@ class PluginLoader(
                 jarFile = jarFile,
             )
         }
-        return plugin to metadata
+        return Triple(plugin, meta, classLoader)
     }
 
     @OptIn(ExperimentalSerializationApi::class)
-    private fun getMetadata(): PluginMeta {
+    private fun loadMeta(): PluginMeta {
         try {
             val metadataEntry =
                 jar.getJarEntry("plugin-meta.json") ?: throw LoadPluginFailedException(

@@ -12,9 +12,9 @@ import dev.kokoroidkt.adapterApi.adapter.AdapterContainer
 import dev.kokoroidkt.adapterApi.adapter.AdapterMeta
 import dev.kokoroidkt.core.adapter.AdapterLoader
 import dev.kokoroidkt.core.adapter.AdapterManager
-import dev.kokoroidkt.core.boot.AdapterPreloader
-import dev.kokoroidkt.core.boot.DriverPreloader
-import dev.kokoroidkt.core.boot.PluginPreloader
+import dev.kokoroidkt.core.loader.preloader.AdapterPreloader
+import dev.kokoroidkt.core.loader.preloader.DriverPreloader
+import dev.kokoroidkt.core.loader.preloader.PluginPreloader
 import dev.kokoroidkt.core.config.Config
 import dev.kokoroidkt.core.constants.ExitStatus
 import dev.kokoroidkt.core.constants.ExitStatus.DATABASE_TOO_OLD
@@ -22,6 +22,7 @@ import dev.kokoroidkt.core.di.allModules
 import dev.kokoroidkt.core.driver.DriverLoader
 import dev.kokoroidkt.core.driver.DriverManager
 import dev.kokoroidkt.core.logger.getLogger
+import dev.kokoroidkt.core.loader.DependencyAwareClassLoader
 import dev.kokoroidkt.core.plugin.PluginLoader
 import dev.kokoroidkt.core.plugin.PluginManager
 import dev.kokoroidkt.core.runtime.crash.CrashRegistry
@@ -433,11 +434,9 @@ class KokoroidLauncher(
     ): DriverContainer? =
         try {
             logger.debug { "try to load ${paths.toFile().absolutePath}" }
-            val driverPair =
-                DriverLoader(paths.toFile())
-                    .loadDriver()
-            val driver: Driver = driverPair.first
-            val metadata: DriverMeta = driverPair.second
+            val jarFile = paths.toFile()
+            val classLoader = DependencyAwareClassLoader(jarFile, emptyList())
+            val (driver, metadata, _) = DriverLoader(jarFile, classLoader).loadDriver()
             driverManager.create(driver, metadata)
         } catch (e: Exception) {
             logger.error(e) {
@@ -495,9 +494,9 @@ class KokoroidLauncher(
     ): AdapterContainer? =
         try {
             logger.debug { "try to load ${paths.toFile().absolutePath}" }
-            val adapterPair = AdapterLoader(paths.toFile()).loadAdapter()
-            val adapter: Adapter = adapterPair.first
-            val metadata: AdapterMeta = adapterPair.second
+            val jarFile = paths.toFile()
+            val classLoader = DependencyAwareClassLoader(jarFile, emptyList())
+            val (adapter, metadata, _) = AdapterLoader(jarFile, classLoader).loadAdapter()
             adapterManager.create(adapter, metadata)
         } catch (e: Exception) {
             logger.error(e) {
@@ -559,9 +558,9 @@ class KokoroidLauncher(
     ): PluginContainer? =
         try {
             logger.debug { "Try to loading: ${paths.toFile().absolutePath}" }
-            val pluginPair = PluginLoader(paths.toFile()).loadPlugin()
-            val plugin: Plugin = pluginPair.first
-            val metadata: PluginMeta = pluginPair.second
+            val jarFile = paths.toFile()
+            val classLoader = DependencyAwareClassLoader(jarFile, emptyList())
+            val (plugin, metadata, _) = PluginLoader(jarFile, classLoader).loadPlugin()
             pluginManager.create(plugin, metadata)
         } catch (e: Exception) {
             logger.error(e) { "Failed to load plugin: ${e.message}" }
