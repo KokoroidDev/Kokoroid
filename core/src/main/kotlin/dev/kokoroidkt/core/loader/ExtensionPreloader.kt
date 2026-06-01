@@ -66,6 +66,10 @@ class ExtensionPreloader(
         }
         val resolved = graph.resolve()
 
+        // Print dependency graph for debugging
+        println(graph.dumpGraph())
+        println(resolved.topologicalOrderString())
+
         // Phase 3: Create DependencyAwareClassLoaders in topological order.
         // Dependencies' classloaders are already in the map because we
         // process in topological order.

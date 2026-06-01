@@ -144,5 +144,36 @@ class DependencyGraph {
     data class ResolvedDependencyGraph(
         val orderedExtensions: List<ExtensionDescriptor>,
         val classLoaderMap: Map<String, ClassLoader>,
-    )
+    ) {
+        /**
+         * Returns a human-readable string of the topological order.
+         */
+        fun topologicalOrderString(): String = buildString {
+            appendLine("Topological Order:")
+            orderedExtensions.forEachIndexed { index, desc ->
+                appendLine("  ${index + 1}. [${desc.type}] ${desc.identifier}")
+            }
+        }
+    }
+
+    /**
+     * Returns a human-readable dump of the full dependency graph structure.
+     * Shows each node, its type, and its declared dependencies.
+     */
+    fun dumpGraph(): String = buildString {
+        appendLine("=== Dependency Graph ===")
+        appendLine("Nodes (${nodes.size}):")
+        for ((id, desc) in nodes.entries.sortedBy { it.key }) {
+            append("- [${desc.type}] $id")
+            if (desc.dependencyIdentifiers.isEmpty()) {
+                appendLine(" (no dependencies)")
+            } else {
+                appendLine()
+                for (depId in desc.dependencyIdentifiers) {
+                    val resolved = if (depId in nodes) "" else " [UNRESOLVED]"
+                    appendLine("    └─ depends on: $depId$resolved")
+                }
+            }
+        }
+    }
 }
