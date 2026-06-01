@@ -19,13 +19,17 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class AdapterLoaderTest {
-
     @Test
     fun `loadAdapter returns Triple with adapter meta and classloader`() {
-        val tempDir = kotlin.io.path.createTempDirectory("adapterLoaderTest").toFile()
+        val tempDir =
+            kotlin.io.path
+                .createTempDirectory("adapterLoaderTest")
+                .toFile()
         try {
             val jarFile = File(tempDir, "test-adapter.jar")
-            createJarWithMeta(jarFile, """
+            createJarWithMeta(
+                jarFile,
+                """
                 {
                     "name": "TestAdapter",
                     "version": "1.0.0",
@@ -35,12 +39,14 @@ class AdapterLoaderTest {
                     "website": null,
                     "priority": 500
                 }
-            """.trimIndent())
-
-            val classLoader = DependencyAwareClassLoader(
-                jarFile = jarFile,
-                dependencyClassLoaders = listOf(SimpleTestAdapter::class.java.classLoader),
+                """.trimIndent(),
             )
+
+            val classLoader =
+                DependencyAwareClassLoader(
+                    jarFile = jarFile,
+                    dependencyClassLoaders = listOf(SimpleTestAdapter::class.java.classLoader),
+                )
 
             val loader = AdapterLoader(jarFile, classLoader)
             val (adapter, meta, returnedClassLoader) = loader.loadAdapter()
@@ -60,10 +66,15 @@ class AdapterLoaderTest {
 
     @Test
     fun `loadAdapter reuses provided classLoader instance`() {
-        val tempDir = kotlin.io.path.createTempDirectory("adapterLoaderTest").toFile()
+        val tempDir =
+            kotlin.io.path
+                .createTempDirectory("adapterLoaderTest")
+                .toFile()
         try {
             val jarFile = File(tempDir, "test-adapter.jar")
-            createJarWithMeta(jarFile, """
+            createJarWithMeta(
+                jarFile,
+                """
                 {
                     "name": "TestAdapter",
                     "version": "1.0.0",
@@ -73,12 +84,14 @@ class AdapterLoaderTest {
                     "website": null,
                     "priority": 500
                 }
-            """.trimIndent())
-
-            val classLoader = DependencyAwareClassLoader(
-                jarFile = jarFile,
-                dependencyClassLoaders = listOf(SimpleTestAdapter::class.java.classLoader),
+                """.trimIndent(),
             )
+
+            val classLoader =
+                DependencyAwareClassLoader(
+                    jarFile = jarFile,
+                    dependencyClassLoaders = listOf(SimpleTestAdapter::class.java.classLoader),
+                )
 
             val loader = AdapterLoader(jarFile, classLoader)
             val result = loader.loadAdapter()
@@ -92,15 +105,19 @@ class AdapterLoaderTest {
 
     @Test
     fun `loadAdapter throws LoadAdapterFailedException when JAR has no meta entry`() {
-        val tempDir = kotlin.io.path.createTempDirectory("adapterLoaderTest").toFile()
+        val tempDir =
+            kotlin.io.path
+                .createTempDirectory("adapterLoaderTest")
+                .toFile()
         try {
             val jarFile = File(tempDir, "empty.jar")
             JarOutputStream(FileOutputStream(jarFile)).use { /* empty jar */ }
 
-            val classLoader = DependencyAwareClassLoader(
-                jarFile = jarFile,
-                dependencyClassLoaders = emptyList(),
-            )
+            val classLoader =
+                DependencyAwareClassLoader(
+                    jarFile = jarFile,
+                    dependencyClassLoaders = emptyList(),
+                )
 
             val loader = AdapterLoader(jarFile, classLoader)
 
@@ -114,10 +131,15 @@ class AdapterLoaderTest {
 
     @Test
     fun `loadAdapter throws LoadAdapterFailedException when main class not found`() {
-        val tempDir = kotlin.io.path.createTempDirectory("adapterLoaderTest").toFile()
+        val tempDir =
+            kotlin.io.path
+                .createTempDirectory("adapterLoaderTest")
+                .toFile()
         try {
             val jarFile = File(tempDir, "broken-adapter.jar")
-            createJarWithMeta(jarFile, """
+            createJarWithMeta(
+                jarFile,
+                """
                 {
                     "name": "BrokenAdapter",
                     "version": "0.0.1",
@@ -127,12 +149,14 @@ class AdapterLoaderTest {
                     "website": null,
                     "priority": 100
                 }
-            """.trimIndent())
-
-            val classLoader = DependencyAwareClassLoader(
-                jarFile = jarFile,
-                dependencyClassLoaders = emptyList(),
+                """.trimIndent(),
             )
+
+            val classLoader =
+                DependencyAwareClassLoader(
+                    jarFile = jarFile,
+                    dependencyClassLoaders = emptyList(),
+                )
 
             val loader = AdapterLoader(jarFile, classLoader)
 

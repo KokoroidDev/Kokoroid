@@ -1,10 +1,5 @@
 package dev.kokoroidkt.coreApi.config
 
-import com.typesafe.config.Config
-import kotlinx.serialization.ExperimentalSerializationApi
-import kotlinx.serialization.hocon.Hocon
-import kotlinx.serialization.hocon.encodeToConfig
-import java.io.File
 import java.nio.file.Path
 
 val kokoroidConfigRoot: Path = Path.of("kokoroid", "config")

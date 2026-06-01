@@ -27,6 +27,8 @@ class AdapterB : Adapter {
     }
 
     override fun getBot(botId: String): Bot = TODO("Not needed for testing")
+
     override fun getBotList(): List<Bot> = emptyList()
+
     override fun getUserContainer(): UserContainer = TODO("Not needed for testing")
 }

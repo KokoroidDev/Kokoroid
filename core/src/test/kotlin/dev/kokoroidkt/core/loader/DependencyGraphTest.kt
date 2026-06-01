@@ -14,21 +14,21 @@ import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 
 class DependencyGraphTest {
-
     private fun descriptor(
         identifier: String,
         name: String = identifier,
         mainClass: String = identifier,
         type: ExtensionType = ExtensionType.PLUGIN,
         dependencyIdentifiers: List<String> = emptyList(),
-    ): ExtensionDescriptor = ExtensionDescriptor(
-        identifier = identifier,
-        name = name,
-        mainClass = mainClass,
-        type = type,
-        jarFile = File("/tmp/test.jar"),
-        dependencyIdentifiers = dependencyIdentifiers,
-    )
+    ): ExtensionDescriptor =
+        ExtensionDescriptor(
+            identifier = identifier,
+            name = name,
+            mainClass = mainClass,
+            type = type,
+            jarFile = File("/tmp/test.jar"),
+            dependencyIdentifiers = dependencyIdentifiers,
+        )
 
     @Test
     fun `simple chain sorts topologically`() {
@@ -36,11 +36,12 @@ class DependencyGraphTest {
         val b = descriptor("B@b", type = ExtensionType.DRIVER, dependencyIdentifiers = listOf("A@a"))
         val c = descriptor("C@c", type = ExtensionType.DRIVER, dependencyIdentifiers = listOf("B@b"))
 
-        val result = DependencyGraph()
-            .addNode(a)
-            .addNode(b)
-            .addNode(c)
-            .resolve()
+        val result =
+            DependencyGraph()
+                .addNode(a)
+                .addNode(b)
+                .addNode(c)
+                .resolve()
 
         assertEquals(listOf(a, b, c), result.orderedExtensions)
     }
@@ -52,12 +53,13 @@ class DependencyGraphTest {
         val c = descriptor("C@c", type = ExtensionType.ADAPTER, dependencyIdentifiers = listOf("A@a"))
         val d = descriptor("D@d", type = ExtensionType.PLUGIN, dependencyIdentifiers = listOf("B@b", "C@c"))
 
-        val result = DependencyGraph()
-            .addNode(a)
-            .addNode(b)
-            .addNode(c)
-            .addNode(d)
-            .resolve()
+        val result =
+            DependencyGraph()
+                .addNode(a)
+                .addNode(b)
+                .addNode(c)
+                .addNode(d)
+                .resolve()
 
         assertEquals(4, result.orderedExtensions.size)
         // A must be first
@@ -73,11 +75,12 @@ class DependencyGraphTest {
         val b = descriptor("B@b", type = ExtensionType.ADAPTER)
         val c = descriptor("C@c", type = ExtensionType.PLUGIN)
 
-        val result = DependencyGraph()
-            .addNode(a)
-            .addNode(b)
-            .addNode(c)
-            .resolve()
+        val result =
+            DependencyGraph()
+                .addNode(a)
+                .addNode(b)
+                .addNode(c)
+                .resolve()
 
         assertEquals(3, result.orderedExtensions.size)
         assertTrue(result.orderedExtensions.containsAll(listOf(a, b, c)))
@@ -88,12 +91,13 @@ class DependencyGraphTest {
         val a = descriptor("A@a", type = ExtensionType.DRIVER, dependencyIdentifiers = listOf("B@b"))
         val b = descriptor("B@b", type = ExtensionType.DRIVER, dependencyIdentifiers = listOf("A@a"))
 
-        val exception = assertFailsWith<DependencyGraphException> {
-            DependencyGraph()
-                .addNode(a)
-                .addNode(b)
-                .resolve()
-        }
+        val exception =
+            assertFailsWith<DependencyGraphException> {
+                DependencyGraph()
+                    .addNode(a)
+                    .addNode(b)
+                    .resolve()
+            }
 
         assertEquals(DependencyErrorType.CIRCULAR_DEPENDENCY, exception.errorType)
     }
@@ -102,11 +106,12 @@ class DependencyGraphTest {
     fun `self cycle throws circular dependency`() {
         val a = descriptor("A@a", type = ExtensionType.DRIVER, dependencyIdentifiers = listOf("A@a"))
 
-        val exception = assertFailsWith<DependencyGraphException> {
-            DependencyGraph()
-                .addNode(a)
-                .resolve()
-        }
+        val exception =
+            assertFailsWith<DependencyGraphException> {
+                DependencyGraph()
+                    .addNode(a)
+                    .resolve()
+            }
 
         assertEquals(DependencyErrorType.CIRCULAR_DEPENDENCY, exception.errorType)
     }
@@ -115,11 +120,12 @@ class DependencyGraphTest {
     fun `missing dependency throws`() {
         val a = descriptor("A@a", type = ExtensionType.DRIVER, dependencyIdentifiers = listOf("nonexistent"))
 
-        val exception = assertFailsWith<DependencyGraphException> {
-            DependencyGraph()
-                .addNode(a)
-                .resolve()
-        }
+        val exception =
+            assertFailsWith<DependencyGraphException> {
+                DependencyGraph()
+                    .addNode(a)
+                    .resolve()
+            }
 
         assertEquals(DependencyErrorType.MISSING_DEPENDENCY, exception.errorType)
     }
@@ -129,12 +135,13 @@ class DependencyGraphTest {
         val plugin = descriptor("P@p", type = ExtensionType.PLUGIN)
         val adapter = descriptor("A@a", type = ExtensionType.ADAPTER, dependencyIdentifiers = listOf("P@p"))
 
-        val exception = assertFailsWith<DependencyGraphException> {
-            DependencyGraph()
-                .addNode(plugin)
-                .addNode(adapter)
-                .resolve()
-        }
+        val exception =
+            assertFailsWith<DependencyGraphException> {
+                DependencyGraph()
+                    .addNode(plugin)
+                    .addNode(adapter)
+                    .resolve()
+            }
 
         assertEquals(DependencyErrorType.INVALID_DEPENDENCY_TYPE, exception.errorType)
     }
@@ -144,12 +151,13 @@ class DependencyGraphTest {
         val a1 = descriptor("same@id", type = ExtensionType.DRIVER)
         val a2 = descriptor("same@id", type = ExtensionType.DRIVER)
 
-        val exception = assertFailsWith<DependencyGraphException> {
-            DependencyGraph()
-                .addNode(a1)
-                .addNode(a2)
-                .resolve()
-        }
+        val exception =
+            assertFailsWith<DependencyGraphException> {
+                DependencyGraph()
+                    .addNode(a1)
+                    .addNode(a2)
+                    .resolve()
+            }
 
         assertEquals(DependencyErrorType.DUPLICATE_EXTENSION, exception.errorType)
     }

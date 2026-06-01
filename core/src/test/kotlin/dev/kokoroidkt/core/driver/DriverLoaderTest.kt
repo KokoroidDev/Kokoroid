@@ -9,15 +9,10 @@ package dev.kokoroidkt.core.driver
 import dev.kokoroidkt.core.exceptions.LoadDriverFailedException
 import dev.kokoroidkt.core.loader.DependencyAwareClassLoader
 import dev.kokoroidkt.driverApi.driver.Driver
-import dev.kokoroidkt.driverApi.driver.DriverMeta
 import java.io.File
 import java.util.jar.JarEntry
 import java.util.jar.JarOutputStream
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertFailsWith
-import kotlin.test.assertNotNull
-import kotlin.test.assertTrue
+import kotlin.test.*
 
 /**
  * A concrete Driver subclass used to verify that DriverLoader
@@ -25,8 +20,11 @@ import kotlin.test.assertTrue
  */
 class TestDriver : Driver() {
     override fun onLoad() {}
+
     override fun onStart() {}
+
     override fun onStop() {}
+
     override fun onUnload() {}
 }
 
@@ -37,13 +35,13 @@ class TestDriver : Driver() {
 private class MockDependencyAwareClassLoader(
     jarFile: File,
 ) : DependencyAwareClassLoader(jarFile, emptyList()) {
-    override fun loadClass(name: String, resolve: Boolean): Class<*> {
-        return TestDriver::class.java
-    }
+    override fun loadClass(
+        name: String,
+        resolve: Boolean,
+    ): Class<*> = TestDriver::class.java
 }
 
 class DriverLoaderTest {
-
     @Test
     fun `loadDriver returns Triple with driver meta and classLoader`() {
         val tempJar = createTempJarWithMeta()
@@ -79,13 +77,17 @@ class DriverLoaderTest {
         var wasCalled = false
         var capturedClassName: String? = null
         val tempJar = createTempJarWithMeta()
-        val trackingLoader = object : DependencyAwareClassLoader(tempJar, emptyList()) {
-            override fun loadClass(name: String, resolve: Boolean): Class<*> {
-                wasCalled = true
-                capturedClassName = name
-                return TestDriver::class.java
+        val trackingLoader =
+            object : DependencyAwareClassLoader(tempJar, emptyList()) {
+                override fun loadClass(
+                    name: String,
+                    resolve: Boolean,
+                ): Class<*> {
+                    wasCalled = true
+                    capturedClassName = name
+                    return TestDriver::class.java
+                }
             }
-        }
         val loader = DriverLoader(jarFile = tempJar, classLoader = trackingLoader)
 
         loader.loadDriver()
@@ -108,11 +110,13 @@ class DriverLoaderTest {
     @Test
     fun `loadDriver throws LoadDriverFailedException when classLoader fails to load class`() {
         val tempJar = createTempJarWithMeta()
-        val failingLoader = object : DependencyAwareClassLoader(tempJar, emptyList()) {
-            override fun loadClass(name: String, resolve: Boolean): Class<*> {
-                throw ClassNotFoundException("Simulated failure: $name")
+        val failingLoader =
+            object : DependencyAwareClassLoader(tempJar, emptyList()) {
+                override fun loadClass(
+                    name: String,
+                    resolve: Boolean,
+                ): Class<*> = throw ClassNotFoundException("Simulated failure: $name")
             }
-        }
         val loader = DriverLoader(jarFile = tempJar, classLoader = failingLoader)
 
         assertFailsWith<LoadDriverFailedException> {
@@ -124,11 +128,13 @@ class DriverLoaderTest {
     fun `loadDriver throws LoadDriverFailedException when mainClass does not have no-arg constructor`() {
         val tempJar = createTempJarWithMeta()
         // CL returns a class without a no-arg constructor
-        val noConstructorLoader = object : DependencyAwareClassLoader(tempJar, emptyList()) {
-            override fun loadClass(name: String, resolve: Boolean): Class<*> {
-                return ClassWithNoNoArgConstructor::class.java
+        val noConstructorLoader =
+            object : DependencyAwareClassLoader(tempJar, emptyList()) {
+                override fun loadClass(
+                    name: String,
+                    resolve: Boolean,
+                ): Class<*> = ClassWithNoNoArgConstructor::class.java
             }
-        }
         val loader = DriverLoader(jarFile = tempJar, classLoader = noConstructorLoader)
 
         assertFailsWith<LoadDriverFailedException> {
@@ -147,7 +153,8 @@ class DriverLoaderTest {
 
             JarOutputStream(tempFile.outputStream()).use { jos ->
                 jos.putNextEntry(JarEntry("driver-meta.json"))
-                val metaJson = """
+                val metaJson =
+                    """
                     {
                         "name": "TestDriver",
                         "version": "1.0.0",
@@ -156,7 +163,7 @@ class DriverLoaderTest {
                         "description": "A test driver for DriverLoader",
                         "priority": 500
                     }
-                """.trimIndent()
+                    """.trimIndent()
                 jos.write(metaJson.toByteArray(Charsets.UTF_8))
                 jos.closeEntry()
             }
@@ -181,4 +188,6 @@ class DriverLoaderTest {
  * A class without a no-arg constructor, used to test error handling
  * when the loaded class cannot be instantiated via reflection.
  */
-private class ClassWithNoNoArgConstructor(name: String)
+private class ClassWithNoNoArgConstructor(
+    name: String,
+)

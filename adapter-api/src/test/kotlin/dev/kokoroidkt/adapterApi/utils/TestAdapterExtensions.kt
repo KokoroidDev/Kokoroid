@@ -14,11 +14,7 @@ import dev.kokoroidkt.coreApi.config.kokoroidConfigRoot
 import dev.kokoroidkt.coreApi.user.UserContainer
 import kotlinx.serialization.Serializable
 import org.junit.jupiter.api.AfterEach
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertTrue
-import org.junit.jupiter.api.Assertions.assertFalse
-import org.junit.jupiter.api.Assertions.assertThrows
-import org.junit.jupiter.api.Assertions.assertNotNull
+import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.koin.core.context.startKoin
@@ -99,16 +95,16 @@ class TestAdapterExtensions {
         val adapterId = adapter.getId()
         assertNotNull(adapterId)
         println("Adapter ID: $adapterId")
-        
+
         // 检查MockAdapterRegistry中的container.adapterId
         val registry = getKoin().get<AdapterRegistry>() as MockAdapterRegistry
         val container = registry.get(adapterId!!)
         assertNotNull(container)
         println("Container adapterId: ${container?.adapterId}")
-        
+
         assertEquals(adapterId, container?.adapterId)
     }
-    
+
     @Test
     fun testAdapterGetMetadata() {
         val metadata = adapter.getMetadata()
@@ -116,23 +112,23 @@ class TestAdapterExtensions {
         println("Metadata: $metadata")
         assertEquals("TestAdapter", metadata?.name)
     }
-    
+
     @Test
     fun testAdapterSaveAndLoadConfig() {
         val config = TestConfigData("hello", 123)
-        
+
         // 先检查metadata
         val metadata = adapter.getMetadata()
         println("Metadata: $metadata")
         println("Metadata name: ${metadata?.name}")
-        
+
         adapter.saveConfigToFile(config)
-        
+
         // 检查文件是否被创建
         val configPath = kokoroidConfigRoot.resolve("adapter/TestAdapter/settings.conf")
         println("Config file exists: ${configPath.exists()}")
         println("Config file path: ${configPath.toAbsolutePath()}")
-        
+
         // 列出目录内容
         val dir = kokoroidConfigRoot.resolve("adapter/TestAdapter").toFile()
         if (dir.exists()) {
@@ -141,13 +137,13 @@ class TestAdapterExtensions {
         } else {
             println("Directory does not exist: ${dir.absolutePath}")
         }
-        
+
         // 检查loadConfigFromFile中使用的路径
         val fullPath = Path.of("adapter", metadata!!.name).resolve(Paths.get("settings.conf"))
         println("Full path in loadConfigFromFile: $fullPath")
         println("Full path exists: ${fullPath.toFile().exists()}")
         println("Full path absolute: ${fullPath.toAbsolutePath()}")
-        
+
         // 检查decodeDataFromPath使用的路径
         val decodePath = kokoroidConfigRoot.resolve(fullPath)
         println("Decode path: $decodePath")
@@ -172,17 +168,18 @@ class TestAdapterExtensions {
     fun testAdapterLoadConfigWhenFileNotExistsAndCreateWhenNullTrue() {
         val defaultConfig = TestConfigData("default", 999)
         val configPath = kokoroidConfigRoot.resolve("adapter/TestAdapter/settings.conf")
-        
+
         configPath.deleteIfExists()
-        
-        val loadedConfig = adapter.loadConfigFromFile(
-            defaultConfig,
-            createWhenNull = true
-        )
-        
+
+        val loadedConfig =
+            adapter.loadConfigFromFile(
+                defaultConfig,
+                createWhenNull = true,
+            )
+
         assertEquals(defaultConfig, loadedConfig)
         assertTrue(configPath.exists())
-        
+
         val fileContent = Files.readString(configPath)
         println("File content: $fileContent")
         assertTrue(fileContent.contains("foo") && fileContent.contains("default"))
@@ -193,14 +190,15 @@ class TestAdapterExtensions {
     fun testAdapterLoadConfigWhenFileNotExistsAndCreateWhenNullFalse() {
         val defaultConfig = TestConfigData("default", 999)
         val configPath = kokoroidConfigRoot.resolve("adapter/TestAdapter/settings.conf")
-        
+
         configPath.deleteIfExists()
-        
-        val loadedConfig = adapter.loadConfigFromFile(
-            defaultConfig,
-            createWhenNull = false
-        )
-        
+
+        val loadedConfig =
+            adapter.loadConfigFromFile(
+                defaultConfig,
+                createWhenNull = false,
+            )
+
         assertEquals(defaultConfig, loadedConfig)
         assertFalse(configPath.exists())
     }
@@ -209,16 +207,16 @@ class TestAdapterExtensions {
     fun testAdapterLoadConfigWhenFileHasInvalidFormat() {
         val defaultConfig = TestConfigData("default", 999)
         val configPath = kokoroidConfigRoot.resolve("adapter/TestAdapter/settings.conf")
-        
+
         // 创建格式错误的配置文件
         configPath.parent.toFile().mkdirs()
         Files.writeString(configPath, "invalid json content")
-        
+
         // 当配置文件格式错误时，应该抛出异常
         assertThrows(Exception::class.java) {
             adapter.loadConfigFromFile(
                 defaultConfig,
-                createWhenNull = false
+                createWhenNull = false,
             )
         }
     }

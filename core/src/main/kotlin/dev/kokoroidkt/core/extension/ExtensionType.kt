@@ -15,7 +15,8 @@ enum class ExtensionType {
     DRIVER,
     ADAPTER,
     PLUGIN,
-    EXTENSION;
+    EXTENSION,
+    ;
 
     /**
      * Determines whether this extension type can declare a dependency on [dependencyType].

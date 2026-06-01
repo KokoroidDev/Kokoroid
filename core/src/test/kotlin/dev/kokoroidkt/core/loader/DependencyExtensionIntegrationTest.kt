@@ -44,7 +44,6 @@ import kotlin.test.assertTrue
  * factory methods, this test should be updated to verify delegation chains.
  */
 class DependencyExtensionIntegrationTest {
-
     // -----------------------------------------------------------------------
     // Test scenarios
     // -----------------------------------------------------------------------
@@ -115,7 +114,8 @@ class DependencyExtensionIntegrationTest {
     fun `load AdapterB via AdapterLoader returns valid adapter instance`() {
         val jarFile = jarFile()
         val result = createPreloader().preload()
-        val cl = result.classLoaderMap["AdapterB@dev.kokoroidkt.testdeps.adapter.AdapterB"] as DependencyAwareClassLoader
+        val cl =
+            result.classLoaderMap["AdapterB@dev.kokoroidkt.testdeps.adapter.AdapterB"] as DependencyAwareClassLoader
 
         val (adapter, meta, returnedCl) = AdapterLoader(jarFile, cl).loadAdapter()
 
@@ -160,7 +160,8 @@ class DependencyExtensionIntegrationTest {
 
         result.allDescriptors.forEach { descriptor ->
             assertEquals(
-                expectedPath, descriptor.jarFile.absolutePath,
+                expectedPath,
+                descriptor.jarFile.absolutePath,
                 "Descriptor '${descriptor.identifier}' should reference the shared test JAR",
             )
         }

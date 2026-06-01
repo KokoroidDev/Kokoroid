@@ -46,15 +46,16 @@ inline fun <reified T : Any> Adapter.saveConfigToFile(
  * @param createWhenNull 当配置文件不存在时是否创建默认配置文件，默认为 true
  * @return 加载的配置对象。
  */
-inline fun <reified T : Any> Adapter.loadConfigFromFile(defaultWhenNull: T,
-                                                        path: Path = Paths.get("settings.conf"),
-                                                        createWhenNull: Boolean = true): T  {
+inline fun <reified T : Any> Adapter.loadConfigFromFile(
+    defaultWhenNull: T,
+    path: Path = Paths.get("settings.conf"),
+    createWhenNull: Boolean = true,
+): T {
     val fullPath = Path.of("adapter", getMetadata()!!.name).resolve(path)
     val configFile = kokoroidConfigRoot.resolve(fullPath).toFile()
     if (configFile.exists()) {
         return decodeDataFromPath<T>(fullPath)
-    }
-    else if (createWhenNull) {
+    } else if (createWhenNull) {
         saveConfigToFile(defaultWhenNull, path)
     }
     return defaultWhenNull

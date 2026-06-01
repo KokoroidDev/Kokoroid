@@ -96,16 +96,18 @@ class ExtensionPreloader(
     internal fun buildClassLoaders(orderedExtensions: List<ExtensionDescriptor>): Map<String, ClassLoader> {
         val classLoaderMap = mutableMapOf<String, ClassLoader>()
         for (descriptor in orderedExtensions) {
-            val depClassLoaders = descriptor.dependencyIdentifiers.map { depId ->
-                classLoaderMap[depId] ?: error(
-                    "Internal error: dependency '$depId' for '${descriptor.identifier}' not yet loaded",
+            val depClassLoaders =
+                descriptor.dependencyIdentifiers.map { depId ->
+                    classLoaderMap[depId] ?: error(
+                        "Internal error: dependency '$depId' for '${descriptor.identifier}' not yet loaded",
+                    )
+                }
+            classLoaderMap[descriptor.identifier] =
+                DependencyAwareClassLoader(
+                    jarFile = descriptor.jarFile,
+                    dependencyClassLoaders = depClassLoaders,
+                    extensionName = descriptor.name,
                 )
-            }
-            classLoaderMap[descriptor.identifier] = DependencyAwareClassLoader(
-                jarFile = descriptor.jarFile,
-                dependencyClassLoaders = depClassLoaders,
-                extensionName = descriptor.name,
-            )
         }
         return classLoaderMap
     }
@@ -116,9 +118,10 @@ class ExtensionPreloader(
             scanJarSafely(path) { file, jar ->
                 val entry = jar.getJarEntry(DRIVER_META_FILE)
                 if (entry != null) {
-                    val meta = jar.getInputStream(entry).use { stream ->
-                        json.decodeFromStream<DriverMeta>(stream)
-                    }
+                    val meta =
+                        jar.getInputStream(entry).use { stream ->
+                            json.decodeFromStream<DriverMeta>(stream)
+                        }
                     descriptors.add(ExtensionDescriptor.fromDriverMeta(meta, file))
                 }
             }
@@ -131,9 +134,10 @@ class ExtensionPreloader(
             scanJarSafely(path) { file, jar ->
                 val entry = jar.getJarEntry(ADAPTER_META_FILE)
                 if (entry != null) {
-                    val meta = jar.getInputStream(entry).use { stream ->
-                        json.decodeFromStream<AdapterMeta>(stream)
-                    }
+                    val meta =
+                        jar.getInputStream(entry).use { stream ->
+                            json.decodeFromStream<AdapterMeta>(stream)
+                        }
                     descriptors.add(ExtensionDescriptor.fromAdapterMeta(meta, file))
                 }
             }
@@ -146,9 +150,10 @@ class ExtensionPreloader(
             scanJarSafely(path) { file, jar ->
                 val entry = jar.getJarEntry(PLUGIN_META_FILE)
                 if (entry != null) {
-                    val meta = jar.getInputStream(entry).use { stream ->
-                        json.decodeFromStream<PluginMeta>(stream)
-                    }
+                    val meta =
+                        jar.getInputStream(entry).use { stream ->
+                            json.decodeFromStream<PluginMeta>(stream)
+                        }
                     descriptors.add(ExtensionDescriptor.fromPluginMeta(meta, file))
                 }
             }
@@ -175,7 +180,11 @@ class ExtensionPreloader(
     }
 
     companion object {
-        private val json = Json { ignoreUnknownKeys = true; explicitNulls = false }
+        private val json =
+            Json {
+                ignoreUnknownKeys = true
+                explicitNulls = false
+            }
 
         private const val DRIVER_META_FILE = "driver-meta.json"
         private const val ADAPTER_META_FILE = "adapter-meta.json"

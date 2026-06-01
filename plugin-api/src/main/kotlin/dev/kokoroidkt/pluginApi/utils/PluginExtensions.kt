@@ -18,7 +18,6 @@ import dev.kokoroidkt.pluginApi.plugin.Plugin
 import dev.kokoroidkt.pluginApi.plugin.PluginMeta
 import dev.kokoroidkt.pluginApi.plugin.PluginRegistry
 import org.koin.java.KoinJavaComponent.getKoin
-import org.koin.mp.KoinPlatform
 import java.nio.file.Path
 import java.nio.file.Paths
 
@@ -78,15 +77,16 @@ inline fun <reified T : Any> Plugin.saveConfigToFile(
  * @param createWhenNull 当配置文件不存在时是否创建默认配置文件，默认为 true
  * @return 加载的配置对象。
  */
-inline fun <reified T : Any> Plugin.loadConfigFromFile(defaultWhenNull: T,
-                                                        path: Path = Paths.get("settings.conf"),
-                                                        createWhenNull: Boolean = true): T  {
+inline fun <reified T : Any> Plugin.loadConfigFromFile(
+    defaultWhenNull: T,
+    path: Path = Paths.get("settings.conf"),
+    createWhenNull: Boolean = true,
+): T {
     val fullPath = Path.of("plugin", metadata().name).resolve(path)
     val configFile = kokoroidConfigRoot.resolve(fullPath).toFile()
     if (configFile.exists()) {
         return decodeDataFromPath<T>(fullPath)
-    }
-    else if (createWhenNull) {
+    } else if (createWhenNull) {
         saveConfigToFile(defaultWhenNull, path)
     }
     return defaultWhenNull

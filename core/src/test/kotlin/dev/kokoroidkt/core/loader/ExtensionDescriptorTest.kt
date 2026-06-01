@@ -15,17 +15,17 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class ExtensionDescriptorTest {
-
     @Test
     fun `fromDriverMeta creates descriptor with correct identifier`() {
-        val meta = DriverMeta(
-            name = "TestDriver",
-            version = "1.0.0",
-            mainClass = "com.example.Driver",
-            authors = null,
-            description = null,
-            website = null,
-        )
+        val meta =
+            DriverMeta(
+                name = "TestDriver",
+                version = "1.0.0",
+                mainClass = "com.example.Driver",
+                authors = null,
+                description = null,
+                website = null,
+            )
         val jarFile = File("/tmp/test-driver.jar")
         val descriptor = ExtensionDescriptor.fromDriverMeta(meta, jarFile)
 
@@ -38,14 +38,15 @@ class ExtensionDescriptorTest {
 
     @Test
     fun `fromDriverMeta has empty dependencyIdentifiers`() {
-        val meta = DriverMeta(
-            name = "TestDriver",
-            version = "1.0.0",
-            mainClass = "com.example.Driver",
-            authors = null,
-            description = null,
-            website = null,
-        )
+        val meta =
+            DriverMeta(
+                name = "TestDriver",
+                version = "1.0.0",
+                mainClass = "com.example.Driver",
+                authors = null,
+                description = null,
+                website = null,
+            )
         val descriptor = ExtensionDescriptor.fromDriverMeta(meta, File("/tmp/test.jar"))
 
         assertEquals(emptyList<String>(), descriptor.dependencyIdentifiers)
@@ -53,14 +54,15 @@ class ExtensionDescriptorTest {
 
     @Test
     fun `fromAdapterMeta creates descriptor with correct identifier and type`() {
-        val meta = AdapterMeta(
-            name = "TestAdapter",
-            version = "2.0.0",
-            mainClass = "com.example.Adapter",
-            authors = null,
-            description = null,
-            website = null,
-        )
+        val meta =
+            AdapterMeta(
+                name = "TestAdapter",
+                version = "2.0.0",
+                mainClass = "com.example.Adapter",
+                authors = null,
+                description = null,
+                website = null,
+            )
         val jarFile = File("/tmp/test-adapter.jar")
         val descriptor = ExtensionDescriptor.fromAdapterMeta(meta, jarFile)
 
@@ -73,14 +75,15 @@ class ExtensionDescriptorTest {
 
     @Test
     fun `fromAdapterMeta has empty dependencyIdentifiers`() {
-        val meta = AdapterMeta(
-            name = "TestAdapter",
-            version = "2.0.0",
-            mainClass = "com.example.Adapter",
-            authors = null,
-            description = null,
-            website = null,
-        )
+        val meta =
+            AdapterMeta(
+                name = "TestAdapter",
+                version = "2.0.0",
+                mainClass = "com.example.Adapter",
+                authors = null,
+                description = null,
+                website = null,
+            )
         val descriptor = ExtensionDescriptor.fromAdapterMeta(meta, File("/tmp/test.jar"))
 
         assertEquals(emptyList<String>(), descriptor.dependencyIdentifiers)
@@ -88,17 +91,18 @@ class ExtensionDescriptorTest {
 
     @Test
     fun `fromPluginMeta creates descriptor with correct identifier and type`() {
-        val meta = PluginMeta(
-            name = "TestPlugin",
-            author = null,
-            description = null,
-            version = "3.0.0",
-            mainClass = "com.example.Plugin",
-            website = null,
-            dependedPlugins = null,
-            loadBefore = null,
-            loadAfter = null,
-        )
+        val meta =
+            PluginMeta(
+                name = "TestPlugin",
+                author = null,
+                description = null,
+                version = "3.0.0",
+                mainClass = "com.example.Plugin",
+                website = null,
+                dependedPlugins = null,
+                loadBefore = null,
+                loadAfter = null,
+            )
         val jarFile = File("/tmp/test-plugin.jar")
         val descriptor = ExtensionDescriptor.fromPluginMeta(meta, jarFile)
 
@@ -111,17 +115,18 @@ class ExtensionDescriptorTest {
 
     @Test
     fun `fromPluginMeta with null dependedPlugins has empty dependencyIdentifiers`() {
-        val meta = PluginMeta(
-            name = "TestPlugin",
-            author = null,
-            description = null,
-            version = "3.0.0",
-            mainClass = "com.example.Plugin",
-            website = null,
-            dependedPlugins = null,
-            loadBefore = null,
-            loadAfter = null,
-        )
+        val meta =
+            PluginMeta(
+                name = "TestPlugin",
+                author = null,
+                description = null,
+                version = "3.0.0",
+                mainClass = "com.example.Plugin",
+                website = null,
+                dependedPlugins = null,
+                loadBefore = null,
+                loadAfter = null,
+            )
         val descriptor = ExtensionDescriptor.fromPluginMeta(meta, File("/tmp/test.jar"))
 
         assertEquals(emptyList<String>(), descriptor.dependencyIdentifiers)
@@ -129,17 +134,18 @@ class ExtensionDescriptorTest {
 
     @Test
     fun `fromPluginMeta with dependedPlugins includes them in dependencyIdentifiers`() {
-        val meta = PluginMeta(
-            name = "TestPlugin",
-            author = null,
-            description = null,
-            version = "3.0.0",
-            mainClass = "com.example.Plugin",
-            website = null,
-            dependedPlugins = arrayOf("com.example.DepA", "com.example.DepB"),
-            loadBefore = null,
-            loadAfter = null,
-        )
+        val meta =
+            PluginMeta(
+                name = "TestPlugin",
+                author = null,
+                description = null,
+                version = "3.0.0",
+                mainClass = "com.example.Plugin",
+                website = null,
+                dependedPlugins = arrayOf("com.example.DepA", "com.example.DepB"),
+                loadBefore = null,
+                loadAfter = null,
+            )
         val descriptor = ExtensionDescriptor.fromPluginMeta(meta, File("/tmp/test.jar"))
 
         assertEquals(listOf("com.example.DepA", "com.example.DepB"), descriptor.dependencyIdentifiers)
@@ -148,14 +154,15 @@ class ExtensionDescriptorTest {
     @Test
     fun `jarFile is preserved in descriptor`() {
         val jarFile = File("/some/path/extension.jar")
-        val meta = DriverMeta(
-            name = "Test",
-            version = "1.0.0",
-            mainClass = "com.example.Test",
-            authors = null,
-            description = null,
-            website = null,
-        )
+        val meta =
+            DriverMeta(
+                name = "Test",
+                version = "1.0.0",
+                mainClass = "com.example.Test",
+                authors = null,
+                description = null,
+                website = null,
+            )
         val descriptor = ExtensionDescriptor.fromDriverMeta(meta, jarFile)
 
         assertEquals(jarFile, descriptor.jarFile)

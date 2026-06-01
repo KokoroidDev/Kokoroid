@@ -8,23 +8,21 @@ package dev.kokoroidkt.core.runtime
 
 import ch.qos.logback.classic.Level
 import dev.kokoroidkt.adapterApi.adapter.Adapter
-import dev.kokoroidkt.adapterApi.adapter.AdapterContainer
-import dev.kokoroidkt.adapterApi.adapter.AdapterMeta
 import dev.kokoroidkt.core.adapter.AdapterLoader
 import dev.kokoroidkt.core.adapter.AdapterManager
-import dev.kokoroidkt.core.loader.preloader.AdapterPreloader
-import dev.kokoroidkt.core.loader.preloader.DriverPreloader
-import dev.kokoroidkt.core.loader.preloader.PluginPreloader
 import dev.kokoroidkt.core.config.Config
 import dev.kokoroidkt.core.constants.ExitStatus
 import dev.kokoroidkt.core.constants.ExitStatus.DATABASE_TOO_OLD
 import dev.kokoroidkt.core.di.allModules
 import dev.kokoroidkt.core.driver.DriverLoader
 import dev.kokoroidkt.core.driver.DriverManager
-import dev.kokoroidkt.core.logger.getLogger
 import dev.kokoroidkt.core.extension.ExtensionType
 import dev.kokoroidkt.core.loader.DependencyAwareClassLoader
 import dev.kokoroidkt.core.loader.ExtensionPreloader
+import dev.kokoroidkt.core.loader.preloader.AdapterPreloader
+import dev.kokoroidkt.core.loader.preloader.DriverPreloader
+import dev.kokoroidkt.core.loader.preloader.PluginPreloader
+import dev.kokoroidkt.core.logger.getLogger
 import dev.kokoroidkt.core.plugin.PluginLoader
 import dev.kokoroidkt.core.plugin.PluginManager
 import dev.kokoroidkt.core.runtime.crash.CrashRegistry
@@ -40,15 +38,10 @@ import dev.kokoroidkt.coreApi.database.migrations.computeTableHash
 import dev.kokoroidkt.coreApi.database.migrations.trySyncDB
 import dev.kokoroidkt.coreApi.database.tables.MigrationTable
 import dev.kokoroidkt.coreApi.exceptions.CriticalException
-import dev.kokoroidkt.coreApi.logging.KokoroidLogger
 import dev.kokoroidkt.coreApi.logging.LogFiles
 import dev.kokoroidkt.coreApi.logging.LogLevelManager
 import dev.kokoroidkt.driverApi.driver.Driver
-import dev.kokoroidkt.driverApi.driver.DriverContainer
-import dev.kokoroidkt.driverApi.driver.DriverMeta
 import dev.kokoroidkt.pluginApi.plugin.Plugin
-import dev.kokoroidkt.pluginApi.plugin.PluginContainer
-import dev.kokoroidkt.pluginApi.plugin.PluginMeta
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
@@ -62,7 +55,6 @@ import org.koin.core.context.GlobalContext.startKoin
 import org.koin.java.KoinJavaComponent
 import java.nio.file.Path
 import java.nio.file.Paths
-import kotlin.collections.flatten
 import kotlin.io.path.Path
 import kotlin.io.path.extension
 import kotlin.io.path.isRegularFile
@@ -354,9 +346,12 @@ class KokoroidLauncher(
         installPlugins()
 
         // Phase 2: Preload — read metadata, build dependency graph, create classloader chain
-        val preloadResult = ExtensionPreloader(
-            driverPreloader, adapterPreloader, pluginPreloader,
-        ).preload()
+        val preloadResult =
+            ExtensionPreloader(
+                driverPreloader,
+                adapterPreloader,
+                pluginPreloader,
+            ).preload()
 
         // Phase 3: Load extensions using dependency-aware classloaders
         runtimeState.state = InternalState.Starting(InternalState.Starting.StartingStep.LoadingDrivers())
@@ -417,8 +412,7 @@ class KokoroidLauncher(
         pluginPreloader.jarPaths.addAll(jarPathsFrom(config.basic.pluginDirectory))
     }
 
-    private fun jarPathsFrom(dir: Path): List<Path> =
-        dir.walk().filter { it.isRegularFile() && it.extension == "jar" }.toList()
+    private fun jarPathsFrom(dir: Path): List<Path> = dir.walk().filter { it.isRegularFile() && it.extension == "jar" }.toList()
 
     // ─────────────────────────────────────────────────────────────────────────
     // Load phase — use dependency-aware classloaders from preload result
@@ -436,7 +430,11 @@ class KokoroidLauncher(
                 val cl = preloadResult.classLoaderMap[desc.identifier] ?: return@forEach
                 try {
                     logger.debug { "try to load ${desc.jarFile.absolutePath}" }
-                    val (driver, metadata, _) = DriverLoader(desc.jarFile, cl as DependencyAwareClassLoader).loadDriver()
+                    val (driver, metadata, _) =
+                        DriverLoader(
+                            desc.jarFile,
+                            cl as DependencyAwareClassLoader,
+                        ).loadDriver()
                     val container = driverManager.create(driver, metadata)
                     driverManager.register(container)
                     logger.debug { "${container.driverId} metadata: ${Json.encodeToString(metadata)}" }

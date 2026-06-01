@@ -46,11 +46,12 @@ class DependencyGraph {
 
         for ((identifier, descriptor) in nodes) {
             for (depId in descriptor.dependencyIdentifiers) {
-                val depDescriptor = nodes[depId]
-                    ?: throw DependencyGraphException(
-                        "Extension '$identifier' depends on '$depId' which is not registered",
-                        DependencyErrorType.MISSING_DEPENDENCY,
-                    )
+                val depDescriptor =
+                    nodes[depId]
+                        ?: throw DependencyGraphException(
+                            "Extension '$identifier' depends on '$depId' which is not registered",
+                            DependencyErrorType.MISSING_DEPENDENCY,
+                        )
                 if (!descriptor.type.canDependOn(depDescriptor.type)) {
                     throw DependencyGraphException(
                         "Extension '$identifier' of type ${descriptor.type} cannot depend on " +
@@ -148,32 +149,34 @@ class DependencyGraph {
         /**
          * Returns a human-readable string of the topological order.
          */
-        fun topologicalOrderString(): String = buildString {
-            appendLine("Topological Order:")
-            orderedExtensions.forEachIndexed { index, desc ->
-                appendLine("  ${index + 1}. [${desc.type}] ${desc.identifier}")
+        fun topologicalOrderString(): String =
+            buildString {
+                appendLine("Topological Order:")
+                orderedExtensions.forEachIndexed { index, desc ->
+                    appendLine("  ${index + 1}. [${desc.type}] ${desc.identifier}")
+                }
             }
-        }
     }
 
     /**
      * Returns a human-readable dump of the full dependency graph structure.
      * Shows each node, its type, and its declared dependencies.
      */
-    fun dumpGraph(): String = buildString {
-        appendLine("=== Dependency Graph ===")
-        appendLine("Nodes (${nodes.size}):")
-        for ((id, desc) in nodes.entries.sortedBy { it.key }) {
-            append("- [${desc.type}] $id")
-            if (desc.dependencyIdentifiers.isEmpty()) {
-                appendLine(" (no dependencies)")
-            } else {
-                appendLine()
-                for (depId in desc.dependencyIdentifiers) {
-                    val resolved = if (depId in nodes) "" else " [UNRESOLVED]"
-                    appendLine("    └─ depends on: $depId$resolved")
+    fun dumpGraph(): String =
+        buildString {
+            appendLine("=== Dependency Graph ===")
+            appendLine("Nodes (${nodes.size}):")
+            for ((id, desc) in nodes.entries.sortedBy { it.key }) {
+                append("- [${desc.type}] $id")
+                if (desc.dependencyIdentifiers.isEmpty()) {
+                    appendLine(" (no dependencies)")
+                } else {
+                    appendLine()
+                    for (depId in desc.dependencyIdentifiers) {
+                        val resolved = if (depId in nodes) "" else " [UNRESOLVED]"
+                        appendLine("    └─ depends on: $depId$resolved")
+                    }
                 }
             }
         }
-    }
 }

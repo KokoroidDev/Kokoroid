@@ -32,45 +32,50 @@ open class DependencyAwareClassLoader(
     private val dependencyClassLoaders: List<ClassLoader>,
     private val extensionName: String? = null,
 ) : ExtensionClassloader(parent = null) {
-
     override var logger: KokoroidLogger =
         getLogger(extensionName ?: "ExtensionClassLoader-${jarFile.name}")
         internal set
 
     private val jar by lazy { JarFile(jarFile) }
 
-    override fun loadClass(name: String, resolve: Boolean): Class<*> {
+    override fun loadClass(
+        name: String,
+        resolve: Boolean,
+    ): Class<*> {
         synchronized(this) {
             // 1. Check already loaded
             var c = findLoadedClass(name)
             if (c != null) return c
 
             // 2. Try JVM Application ClassLoader
-            c = try {
-                ClassLoader.getSystemClassLoader().loadClass(name)
-            } catch (_: ClassNotFoundException) {
-                null
-            }
+            c =
+                try {
+                    ClassLoader.getSystemClassLoader().loadClass(name)
+                } catch (_: ClassNotFoundException) {
+                    null
+                }
 
             // 3. Try dependency classloaders in order
             if (c == null) {
                 for (depCl in dependencyClassLoaders) {
-                    c = try {
-                        depCl.loadClass(name)
-                    } catch (_: ClassNotFoundException) {
-                        null
-                    }
+                    c =
+                        try {
+                            depCl.loadClass(name)
+                        } catch (_: ClassNotFoundException) {
+                            null
+                        }
                     if (c != null) break
                 }
             }
 
             // 4. Try self (JAR)
             if (c == null) {
-                c = try {
-                    findClass(name)
-                } catch (_: ClassNotFoundException) {
-                    null
-                }
+                c =
+                    try {
+                        findClass(name)
+                    } catch (_: ClassNotFoundException) {
+                        null
+                    }
             }
 
             if (resolve && c != null) resolveClass(c)
@@ -81,8 +86,9 @@ open class DependencyAwareClassLoader(
     override fun findClass(className: String): Class<*> {
         try {
             val entryName = className.replace('.', '/') + ".class"
-            val entry = jar.getEntry(entryName)
-                ?: throw ClassNotFoundException(className)
+            val entry =
+                jar.getEntry(entryName)
+                    ?: throw ClassNotFoundException(className)
             return jar.getInputStream(entry).use { input ->
                 val bytes = input.readBytes()
                 defineClass(className, bytes, 0, bytes.size)

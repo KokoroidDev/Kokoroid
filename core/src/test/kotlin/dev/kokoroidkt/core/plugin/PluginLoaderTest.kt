@@ -9,7 +9,6 @@ package dev.kokoroidkt.core.plugin
 import dev.kokoroidkt.core.exceptions.LoadPluginFailedException
 import dev.kokoroidkt.core.loader.DependencyAwareClassLoader
 import dev.kokoroidkt.pluginApi.plugin.Plugin
-import dev.kokoroidkt.pluginApi.plugin.PluginMeta
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import java.io.File
@@ -25,16 +24,21 @@ import kotlin.test.assertTrue
  */
 class TestPluginImpl : Plugin {
     override fun onLoad() {}
+
     override fun onEnable() {}
+
     override fun onDisable() {}
+
     override fun onUnload() {}
 }
 
 class PluginLoaderTest {
-
     @Test
     fun `loadPlugin returns plugin loaded from provided classloader`() {
-        val tempDir = kotlin.io.path.createTempDirectory("pluginLoaderTest").toFile()
+        val tempDir =
+            kotlin.io.path
+                .createTempDirectory("pluginLoaderTest")
+                .toFile()
         try {
             val jarFile = File(tempDir, "test-plugin.jar")
             createPluginJar(jarFile, "dev.kokoroidkt.core.plugin.TestPluginImpl")
@@ -52,7 +56,10 @@ class PluginLoaderTest {
 
     @Test
     fun `Triple includes meta and classloader`() {
-        val tempDir = kotlin.io.path.createTempDirectory("pluginLoaderTest").toFile()
+        val tempDir =
+            kotlin.io.path
+                .createTempDirectory("pluginLoaderTest")
+                .toFile()
         try {
             val jarFile = File(tempDir, "test-plugin.jar")
             createPluginJar(jarFile, "dev.kokoroidkt.core.plugin.TestPluginImpl")
@@ -72,16 +79,20 @@ class PluginLoaderTest {
 
     @Test
     fun `loadPlugin throws LoadPluginFailedException when main class not found`() {
-        val tempDir = kotlin.io.path.createTempDirectory("pluginLoaderTest").toFile()
+        val tempDir =
+            kotlin.io.path
+                .createTempDirectory("pluginLoaderTest")
+                .toFile()
         try {
             val jarFile = File(tempDir, "test-plugin.jar")
             createPluginJar(jarFile, "com.nonexistent.NoSuchPlugin")
             val classLoader = DependencyAwareClassLoader(jarFile, emptyList())
             val pluginLoader = PluginLoader(jarFile, classLoader)
 
-            val exception = assertThrows<LoadPluginFailedException> {
-                pluginLoader.loadPlugin()
-            }
+            val exception =
+                assertThrows<LoadPluginFailedException> {
+                    pluginLoader.loadPlugin()
+                }
             assertTrue(exception.cause is ClassNotFoundException)
         } finally {
             tempDir.deleteRecursively()
@@ -90,7 +101,10 @@ class PluginLoaderTest {
 
     @Test
     fun `loadPlugin throws LoadPluginFailedException when jar has no plugin-meta json`() {
-        val tempDir = kotlin.io.path.createTempDirectory("pluginLoaderTest").toFile()
+        val tempDir =
+            kotlin.io.path
+                .createTempDirectory("pluginLoaderTest")
+                .toFile()
         try {
             val jarFile = File(tempDir, "empty.jar")
             JarOutputStream(FileOutputStream(jarFile)).use { }

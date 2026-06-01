@@ -37,7 +37,10 @@ data class ExtensionDescriptor(
         /**
          * Creates an [ExtensionDescriptor] from a [DriverMeta].
          */
-        fun fromDriverMeta(meta: DriverMeta, jarFile: File): ExtensionDescriptor =
+        fun fromDriverMeta(
+            meta: DriverMeta,
+            jarFile: File,
+        ): ExtensionDescriptor =
             ExtensionDescriptor(
                 identifier = "${meta.name}@${meta.mainClass}",
                 name = meta.name,
@@ -50,7 +53,10 @@ data class ExtensionDescriptor(
         /**
          * Creates an [ExtensionDescriptor] from an [AdapterMeta].
          */
-        fun fromAdapterMeta(meta: AdapterMeta, jarFile: File): ExtensionDescriptor =
+        fun fromAdapterMeta(
+            meta: AdapterMeta,
+            jarFile: File,
+        ): ExtensionDescriptor =
             ExtensionDescriptor(
                 identifier = "${meta.name}@${meta.mainClass}",
                 name = meta.name,
@@ -63,15 +69,19 @@ data class ExtensionDescriptor(
         /**
          * Creates an [ExtensionDescriptor] from a [PluginMeta].
          */
-        fun fromPluginMeta(meta: PluginMeta, jarFile: File): ExtensionDescriptor =
+        fun fromPluginMeta(
+            meta: PluginMeta,
+            jarFile: File,
+        ): ExtensionDescriptor =
             ExtensionDescriptor(
                 identifier = "${meta.name}@${meta.mainClass}",
                 name = meta.name,
                 mainClass = meta.mainClass,
                 type = ExtensionType.PLUGIN,
                 jarFile = jarFile,
-                dependencyIdentifiers = (meta.dependedPlugins?.toList() ?: emptyList()) +
-                    meta.adapterDependencies + meta.driverDependencies,
+                dependencyIdentifiers =
+                    (meta.dependedPlugins?.toList() ?: emptyList()) +
+                        meta.adapterDependencies + meta.driverDependencies,
             )
     }
 }
