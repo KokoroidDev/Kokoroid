@@ -6,6 +6,7 @@
 
 package dev.kokoroidkt.core.loader
 
+import dev.kokoroidkt.core.logger.getLogger
 import dev.kokoroidkt.coreApi.classloader.ExtensionClassloader
 import dev.kokoroidkt.coreApi.logging.KokoroidLogger
 import java.io.File
@@ -30,13 +31,8 @@ open class DependencyAwareClassLoader(
     private val dependencyClassLoaders: List<ClassLoader>,
 ) : ExtensionClassloader(parent = null) {
 
-    private var _logger: KokoroidLogger? = null
-
-    override var logger: KokoroidLogger
-        get() = _logger ?: throw IllegalStateException("Logger is not initialized")
-        set(value) {
-            _logger = value
-        }
+    override var logger: KokoroidLogger = getLogger("ExtensionClassLoader-${jarFile.name}")
+        internal set
 
     private val jar by lazy { JarFile(jarFile) }
 
