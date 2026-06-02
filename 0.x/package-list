@@ -9,7 +9,6 @@ dev.kokoroidkt.adapterApi.utils
 module:core
 dev.kokoroidkt.core
 dev.kokoroidkt.core.adapter
-dev.kokoroidkt.core.boot
 dev.kokoroidkt.core.classloader
 dev.kokoroidkt.core.config
 dev.kokoroidkt.core.constants
@@ -18,7 +17,10 @@ dev.kokoroidkt.core.di
 dev.kokoroidkt.core.driver
 dev.kokoroidkt.core.exceptions
 dev.kokoroidkt.core.exceptions.state
+dev.kokoroidkt.core.extension
 dev.kokoroidkt.core.factory
+dev.kokoroidkt.core.loader
+dev.kokoroidkt.core.loader.preloader
 dev.kokoroidkt.core.logger
 dev.kokoroidkt.core.plugin
 dev.kokoroidkt.core.runtime
