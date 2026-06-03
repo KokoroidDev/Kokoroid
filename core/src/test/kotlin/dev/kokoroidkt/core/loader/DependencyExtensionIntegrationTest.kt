@@ -235,12 +235,14 @@ class DependencyExtensionIntegrationTest {
     // -----------------------------------------------------------------------
 
     private fun jarFile(): File {
-        // Method 1: Use relative path from module root
         val jarRelativePath = "test-extension-with-deps/build/libs/test-extension-with-deps.jar"
 
-        // Try from project root
+        // Strategy 1: Check from current working directory and parents
         var dir = File(System.getProperty("user.dir"))
-        while (dir != null && dir.absolutePath != "/") {
+        var attempts = 0
+        val maxAttempts = 20 // Prevent infinite loops
+        
+        while (dir != null && dir.absolutePath != "/" && attempts++ < maxAttempts) {
             val jar = File(dir, jarRelativePath)
             if (jar.exists()) return jar
 
@@ -251,12 +253,37 @@ class DependencyExtensionIntegrationTest {
             dir = dir.parentFile
         }
 
-        // Fallback: Use classpath resource if available
+        // Strategy 2: Try project root markers (look for build.gradle.kts or settings.gradle.kts)
+        val workdir = File(System.getProperty("user.dir"))
+        val root = generateSequence(workdir) { it.parentFile }
+            .firstOrNull { f ->
+                f.list()?.any { name ->
+                    name == "build.gradle.kts" || name == "settings.gradle.kts"
+                } == true
+            }
+        
+        if (root != null) {
+            val jar = File(root, jarRelativePath)
+            if (jar.exists()) return jar
+        }
+
+        // Strategy 3: Use classpath resource if available
         val resourceUrl = this::class.java.classLoader.getResource("test-extension-with-deps.jar")
         if (resourceUrl != null) {
             return File(resourceUrl.toURI())
         }
 
-        error("Pre-built test-extension-with-deps JAR not found at: $jarRelativePath")
+        // Fallback: Detailed error message for debugging
+        val searchedPaths = listOf(
+            File(System.getProperty("user.dir"), jarRelativePath).absolutePath,
+            if (root != null) File(root, jarRelativePath).absolutePath else "N/A"
+        ).distinct()
+        
+        error(
+            "Pre-built test-extension-with-deps JAR not found. Searched paths:\n" +
+            searchedPaths.joinToString("\n") { "  - $it" } +
+            "\n\nCurrent working directory: ${System.getProperty("user.dir")}\n" +
+            "Project root detected: ${root?.absolutePath ?: "Not found"}"
+        )
     }
 }
