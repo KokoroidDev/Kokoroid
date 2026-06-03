@@ -235,14 +235,28 @@ class DependencyExtensionIntegrationTest {
     // -----------------------------------------------------------------------
 
     private fun jarFile(): File {
-        // Search from user.dir upward for the pre-built test JAR
+        // Method 1: Use relative path from module root
         val jarRelativePath = "test-extension-with-deps/build/libs/test-extension-with-deps.jar"
+
+        // Try from project root
         var dir = File(System.getProperty("user.dir"))
-        while (dir != null) {
+        while (dir != null && dir.absolutePath != "/") {
             val jar = File(dir, jarRelativePath)
             if (jar.exists()) return jar
+
+            // Also check if we're in the parent directory
+            val parentJar = File(dir.parentFile, jarRelativePath)
+            if (parentJar.exists()) return parentJar
+
             dir = dir.parentFile
         }
-        error("Pre-built test-extension-with-deps JAR not found. Run './gradlew :test-extension-with-deps:jar' first.")
+
+        // Fallback: Use classpath resource if available
+        val resourceUrl = this::class.java.classLoader.getResource("test-extension-with-deps.jar")
+        if (resourceUrl != null) {
+            return File(resourceUrl.toURI())
+        }
+
+        error("Pre-built test-extension-with-deps JAR not found at: $jarRelativePath")
     }
 }
