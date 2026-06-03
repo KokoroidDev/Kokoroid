@@ -55,6 +55,8 @@ jobs:
         uses: gradle/actions/setup-gradle@v6.0.1
       - name: Make gradlew executable
         run: chmod +x ./gradlew
+      - name: Build test extensions
+        run: ./gradlew :test-extension-with-deps:jar
       - name: Build Core
         run: |
           VERSION="${GITHUB_REF_NAME#v}"
