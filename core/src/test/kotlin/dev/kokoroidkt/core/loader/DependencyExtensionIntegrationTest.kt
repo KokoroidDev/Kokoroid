@@ -235,6 +235,12 @@ class DependencyExtensionIntegrationTest {
     // -----------------------------------------------------------------------
 
     private fun jarFile(): File {
+        val resourcePath = "test-extension-with-deps.jar"
+        var resourceUrl = this::class.java.classLoader.getResource(resourcePath)
+        if (resourceUrl != null) {
+            return File(resourceUrl.toURI())
+        }
+
         // Method 1: Use relative path from module root
         val jarRelativePath = "test-extension-with-deps/build/libs/test-extension-with-deps.jar"
 
@@ -252,7 +258,7 @@ class DependencyExtensionIntegrationTest {
         }
 
         // Fallback: Use classpath resource if available
-        val resourceUrl = this::class.java.classLoader.getResource("test-extension-with-deps.jar")
+        resourceUrl = this::class.java.classLoader.getResource("test-extension-with-deps.jar")
         if (resourceUrl != null) {
             return File(resourceUrl.toURI())
         }

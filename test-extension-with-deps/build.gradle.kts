@@ -23,3 +23,16 @@ tasks.jar {
 tasks.test {
     useJUnitPlatform()
 }
+
+tasks.jar {
+    archiveBaseName.set("test-extension-with-deps")
+}
+
+tasks.jar {
+    doLast {
+        copy {
+            from(archiveFile)
+            into(file("../core/build/resources/test"))
+        }
+    }
+}
