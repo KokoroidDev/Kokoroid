@@ -62,6 +62,13 @@ tasks.test {
     dependsOn(":core:deleteTestConfigFolder")
     useJUnitPlatform()
     jvmArgs("--enable-native-access=ALL-UNNAMED")
+
+    // Skip heavy integration tests in publish-core-to-release CI job
+    if (project.hasProperty("skipDependencyExtensionIT")) {
+        filter {
+            excludeTestsMatching("*DependencyExtensionIntegrationTest*")
+        }
+    }
 }
 
 tasks.shadowJar {

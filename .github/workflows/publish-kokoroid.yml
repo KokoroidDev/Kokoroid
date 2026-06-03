@@ -59,7 +59,7 @@ jobs:
       - name: Build Core
         run: |
           VERSION="${GITHUB_REF_NAME#v}"
-          ./gradlew clean :core:build :core:shadowJar -Pversion="$VERSION"
+          ./gradlew clean :core:build :core:shadowJar -Pversion="$VERSION" -PskipDependencyExtensionIT
       - name: Create Release with changelogits
         run: npx changelogits --repo-provider github
         env:
